@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "128176744902",
+    "firebase_url": "https://my-game-portal-10af3-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "my-game-portal-10af3",
+    "storage_bucket": "my-game-portal-10af3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:128176744902:android:2ff6a2da0494f714e32ac7",
+        "android_client_info": {
+          "package_name": "dk.nextgames.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDniYALo0T7OOPsIymyKQDbW1wr_WjA_WQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
