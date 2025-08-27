@@ -9,13 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageScaffold(
     title:   String,
     onBack:  () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {}, // <-- new parameter for action chat icon
     content: @Composable (PaddingValues) -> Unit = { pv ->            // ← default-indhold
         Box(
             modifier         = Modifier
@@ -37,6 +37,7 @@ fun PageScaffold(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                     }
                 },
+                actions = actions, // <-- add actions here for chat icon
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.Transparent            // også gennemsigtig
                 )
