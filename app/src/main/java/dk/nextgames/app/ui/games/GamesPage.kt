@@ -1,3 +1,4 @@
+// app/src/main/java/dk/nextgames/app/ui/games/GamesPage.kt
 package dk.nextgames.app.ui.games
 
 import androidx.compose.foundation.layout.*
@@ -57,7 +58,19 @@ fun GamesPage(
 
 @Composable
 private fun GameCard(game: Game, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    // Bruger ALTID temaets container med global opacity
+    val container   = MaterialTheme.colorScheme.surfaceVariant
+    val onContainer = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = container,
+            contentColor   = onContainer
+        )
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()

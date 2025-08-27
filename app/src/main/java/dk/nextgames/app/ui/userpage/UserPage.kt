@@ -8,10 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dk.nextgames.app.data.UserProfile
 import dk.nextgames.app.viewModel.ProfileViewModel
 import dk.nextgames.app.ui.pages.PageScaffold
-import dk.nextgames.app.helper.contrast  // din extension: Color.contrast()
 
 @Composable
 fun UserPage(onBack: () -> Unit, vm: ProfileViewModel = viewModel()) {
@@ -30,17 +28,27 @@ fun UserPage(onBack: () -> Unit, vm: ProfileViewModel = viewModel()) {
             ) { Text(state.error) }
 
             state.profile != null -> {
-                // Simpelt Column uden fast contentColor:
                 Column(
                     Modifier
                         .padding(inner)
-                        .padding(24.dp)
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("Username:", style = MaterialTheme.typography.labelLarge)
-                    Text(state.profile.name.ifBlank { "NO VALUE" })
-                    Spacer(Modifier.height(8.dp))
-                    Text("Email:", style = MaterialTheme.typography.labelLarge)
-                    Text(state.profile.email.ifBlank { "UNKNOWN" })
+                    // “Kasse” = temaets container (surfaceVariant) med global opacity
+                    Surface(
+                        color        = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        shape        = MaterialTheme.shapes.medium
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("Username:", style = MaterialTheme.typography.labelLarge)
+                            Text(state.profile.name.ifBlank { "NO VALUE" })
+                            Spacer(Modifier.height(8.dp))
+                            Text("Email:", style = MaterialTheme.typography.labelLarge)
+                            Text(state.profile.email.ifBlank { "UNKNOWN" })
+                        }
+                    }
                 }
             }
         }

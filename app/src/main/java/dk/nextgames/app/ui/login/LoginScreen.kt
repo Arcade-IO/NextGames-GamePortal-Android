@@ -47,12 +47,12 @@ fun LoginScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier            = Modifier.padding(24.dp)
                     ) {
-                        // Logo
+                        // Logo – fylder op til 80% af bredden, men maks 420dp (tablet cap)
                         Image(
-                            painter           = painterResource(R.drawable.ic_logo),
-                            contentDescription= "Logo",
-                            modifier          = Modifier
-                                .fillMaxWidth(0.4f)
+                            painter            = painterResource(R.drawable.ic_logo),
+                            contentDescription = "Logo",
+                            modifier = Modifier
+                                .fillMaxHeight(0.35f)
                                 .aspectRatio(1f)
                         )
                         Spacer(Modifier.height(24.dp))
@@ -73,12 +73,12 @@ fun LoginScreen(
                         Spacer(Modifier.height(12.dp))
 
                         AppOutlinedTextField(
-                            value               = ui.password,
-                            onValueChange       = vm::onPasswordChange,
-                            label               = { Text("Password") },
-                            singleLine          = true,
-                            visualTransformation= PasswordVisualTransformation(),
-                            modifier            = Modifier.fillMaxWidth()
+                            value                = ui.password,
+                            onValueChange        = vm::onPasswordChange,
+                            label                = { Text("Password") },
+                            singleLine           = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier             = Modifier.fillMaxWidth()
                         )
 
                         Spacer(Modifier.height(24.dp))
