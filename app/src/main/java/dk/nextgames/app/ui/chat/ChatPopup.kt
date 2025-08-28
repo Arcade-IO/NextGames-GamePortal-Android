@@ -1,12 +1,23 @@
+// app/src/main/java/dk/nextgames/app/ui/chat/ChatPopup.kt
 package dk.nextgames.app.ui.chat
 
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.*
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,9 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.firebase.database.ChildEventListener
 import dk.nextgames.app.data.Message
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.automirrored.filled.Send
+import dk.nextgames.app.viewModel.ChatViewModel
+import dk.nextgames.app.ui.common.ContainerCard
 
 /**
  * ChatPopup is a composable for displaying and sending chat messages.
@@ -26,37 +36,45 @@ import androidx.compose.material.icons.automirrored.filled.Send
 fun ChatPopup(
     gameId: String,
     userName: String?,
-    chatRepository: ChatRepository?,
+    chatViewModel: ChatViewModel?,
     onClose: () -> Unit
 ) {
     val safeGameId = gameId.ifBlank { "unknown" }
     val safeUserName = userName ?: "Anonymous"
-    val safeChatRepo = chatRepository ?: run {
-        // Show unavailable UI if repo is not provided
+    val safeChatRepo = chatViewModel ?: run {
+        // Fallback: vis uinitialiseret chat i DIN kasse (ContainerCard)
         Box(
-            Modifier.fillMaxSize().background(Color(0xAA222222)),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xAA222222)),
             contentAlignment = Alignment.Center
         ) {
-            Column(
-                Modifier.background(Color.White).padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            ContainerCard(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight()
             ) {
-                Text("Chat unavailable", style = MaterialTheme.typography.titleMedium)
-                Text("Chat service is not initialized.", color = Color.Gray)
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = onClose) { Text("Close") }
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Chat unavailable", style = MaterialTheme.typography.titleMedium)
+                    Text("Chat service is not initialized.")
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = onClose) { Text("Close") }
+                }
             }
         }
         return
     }
 
-    // State for messages and input
+    // State
     val messages = remember { mutableStateListOf<Message>() }
     var input by remember { mutableStateOf("") }
     var listener by remember { mutableStateOf<ChildEventListener?>(null) }
     val scrollState = rememberScrollState()
 
-    // On first composition, set up listeners and fetch history
+    // Init: hent historik og lyt på nye beskeder
     LaunchedEffect(Unit) {
         try {
             safeChatRepo.cleanOldMessages()
@@ -72,7 +90,7 @@ fun ChatPopup(
         }
     }
 
-    // Clean up the listener when popup closes
+    // Cleanup: fjern lytter
     DisposableEffect(Unit) {
         onDispose {
             listener?.let {
@@ -85,46 +103,41 @@ fun ChatPopup(
         }
     }
 
-
-    // Main chat popup UI
+    // Popup overlay + DIN kasse som container for hele chatvinduet
     Box(
-        Modifier.fillMaxSize().background(Color.Transparent),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Transparent),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.large, color = Color.White,
-            tonalElevation = 12.dp,
-            shadowElevation = 24.dp,
+        ContainerCard(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .fillMaxHeight(0.8f)
-                .background(Color.White)
         ) {
             Column(
-                Modifier
+                modifier = Modifier
                     .fillMaxSize()
                     .padding(18.dp)
-                    .background(Color.White)
             ) {
-                // Header bar
+                // Header
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Game Chat", style = MaterialTheme.typography.titleLarge, color = Color.Black)
+                    Text("Game Chat", style = MaterialTheme.typography.titleLarge)
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close Chat", tint = Color.Black)
+                        Icon(Icons.Filled.Close, contentDescription = "Close Chat")
                     }
                 }
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-                // Chat box messages (scrollable)
+                // Beskedliste
                 Box(
-                    Modifier
+                    modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .background(Color.White, MaterialTheme.shapes.medium)
                         .padding(8.dp)
                 ) {
                     Column(Modifier.verticalScroll(scrollState)) {
@@ -145,7 +158,7 @@ fun ChatPopup(
                                     Column(Modifier.padding(10.dp)) {
                                         Text(
                                             msg.userName,
-                                            color = if (isOwn) Color.White.copy(alpha = 0.9f) else Color.Gray,
+                                            color = if (isOwn) Color.White.copy(alpha = 0.9f) else Color.DarkGray,
                                             style = MaterialTheme.typography.labelMedium,
                                             modifier = Modifier.padding(bottom = 2.dp)
                                         )
@@ -162,7 +175,7 @@ fun ChatPopup(
                 }
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-                // User input area
+                // Input række
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -172,16 +185,15 @@ fun ChatPopup(
                         onValueChange = { input = it },
                         modifier = Modifier
                             .weight(1f)
-                            .background(Color.Transparent)
                             .padding(end = 8.dp),
-                        placeholder = { Text("Write a message...", color = Color.DarkGray) },
+                        placeholder = { Text("Write a message...") },
                         shape = MaterialTheme.shapes.medium,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF1976D2),
-                            unfocusedBorderColor = Color.LightGray,
-                            cursorColor = Color(0xFF1976D2)
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            cursorColor = MaterialTheme.colorScheme.primary
                         ),
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
+                        textStyle = MaterialTheme.typography.bodyMedium
                     )
                     IconButton(
                         onClick = {
@@ -202,14 +214,14 @@ fun ChatPopup(
                         },
                         modifier = Modifier.size(48.dp)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = Color(0xFF1976D2))
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
                     }
                 }
             }
         }
     }
 
-    // Auto-scroll to the bottom on new message
+    // Auto-scroll til bund ved nye beskeder
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             scrollState.animateScrollTo(scrollState.maxValue)

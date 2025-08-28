@@ -19,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dk.nextgames.app.ui.chat.ChatPopup
-import dk.nextgames.app.ui.chat.ChatRepository
+import dk.nextgames.app.viewModel.ChatViewModel
 import dk.nextgames.app.ui.pages.PageScaffold
 import dk.nextgames.app.viewModel.GameInterfaceViewModel
 import java.net.URLDecoder
@@ -40,7 +40,7 @@ fun GameInterfacePage(
     // State for showing/hiding the chat popup
     val showChat = remember { mutableStateOf(false) }
     // The chat repository, manages all chat communication with Firebase
-    val chatRepository = remember { ChatRepository(FirebaseDatabase.getInstance()) }
+    val chatViewModel = remember { ChatViewModel(FirebaseDatabase.getInstance()) }
     // Get current user from Firebase Auth for chat userName
     val firebaseUser = FirebaseAuth.getInstance().currentUser
     val userName = firebaseUser?.displayName ?: firebaseUser?.email ?: "Anonymous"
@@ -86,7 +86,7 @@ fun GameInterfacePage(
                 ChatPopup(
                     gameId = gameId,
                     userName = userName,
-                    chatRepository = chatRepository,
+                    chatViewModel = chatViewModel,
                     onClose = { showChat.value = false }
                 )
             }

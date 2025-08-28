@@ -1,17 +1,21 @@
-package dk.nextgames.app.ui.chat
+package dk.nextgames.app.viewModel
 
-import com.google.firebase.database.*
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
 import dk.nextgames.app.data.Message
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import java.util.Date
+import kotlin.collections.get
 
 /**
  * Handles all chat-related database operations.
  * Stores timestamps as ISO 8601 strings.
  */
-class ChatRepository(private val database: FirebaseDatabase) {
+class ChatViewModel(private val database: FirebaseDatabase) {
     private val chatRef = database.getReference("messages")
 
     /**
