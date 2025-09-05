@@ -19,7 +19,8 @@ import dk.nextgames.app.helper.AppOutlinedTextField
 @Composable
 fun LoginScreen(
     vm: LoginViewModel = viewModel(),
-    onLoggedIn: () -> Unit
+    onLoggedIn: () -> Unit,
+    onForgotPassword: () -> Unit
 ) {
     val ui by vm.ui.collectAsState()
 
@@ -33,23 +34,21 @@ fun LoginScreen(
             if (ui.isLoading) {
                 CircularProgressIndicator()
             } else {
-                // 1) Vi lader BackgroundBox (fra dit AppActivity) tegne billedet+baggrund
-                // 2) Her bruger vi ENKELT Surface til at sætte contentColor = onBackground
                 Surface(
-                    color        = Color.Transparent,
+                    color = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.onBackground,
                     tonalElevation = 0.dp,
-                    modifier     = Modifier
+                    modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier            = Modifier.padding(24.dp)
+                        modifier = Modifier.padding(24.dp)
                     ) {
-                        // Logo – fylder op til 80% af bredden, men maks 420dp (tablet cap)
+                        // Logo
                         Image(
-                            painter            = painterResource(R.drawable.ic_logo),
+                            painter = painterResource(R.drawable.ic_logo),
                             contentDescription = "Logo",
                             modifier = Modifier
                                 .fillMaxHeight(0.35f)
@@ -57,39 +56,46 @@ fun LoginScreen(
                         )
                         Spacer(Modifier.height(24.dp))
 
-                        // Overskrift arver onBackground → sort på lys baggrund
                         Text("Log dig ind", style = MaterialTheme.typography.titleLarge)
 
                         Spacer(Modifier.height(24.dp))
 
-                        // Dine felter bruger LocalContentColor.current → nu korrekt sort
                         AppOutlinedTextField(
-                            value         = ui.email,
+                            value = ui.email,
                             onValueChange = vm::onEmailChange,
-                            label         = { Text("Email") },
-                            modifier      = Modifier.fillMaxWidth()
+                            label = { Text("Email") },
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(Modifier.height(12.dp))
 
                         AppOutlinedTextField(
-                            value                = ui.password,
-                            onValueChange        = vm::onPasswordChange,
-                            label                = { Text("Password") },
-                            singleLine           = true,
+                            value = ui.password,
+                            onValueChange = vm::onPasswordChange,
+                            label = { Text("Password") },
+                            singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
-                            modifier             = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(Modifier.height(24.dp))
 
-                        // Knappen henter tekstfarve fra onPrimary i dit tema
                         Button(
-                            onClick  = { vm.login(onLoggedIn) },
+                            onClick = { vm.login(onLoggedIn) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Log ind")
                         }
+
+                        // 🔹 Forgot password button
+                        TextButton(
+                            onClick = onForgotPassword,
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("Forgot password?")
+                        }
+
+                        Spacer(Modifier.height(24.dp))
 
                         ui.error?.let {
                             Spacer(Modifier.height(8.dp))

@@ -65,4 +65,7 @@ dependencies {
     implementation(libs.androidx.palette.ktx)
 
     implementation(libs.androidx.datastore.preferences)
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.json:json:20240303")
 }
