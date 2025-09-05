@@ -1,10 +1,13 @@
 package dk.nextgames.app.viewModel
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import dk.nextgames.app.data.Message
+import dk.nextgames.app.data.ChatTheme
+import dk.nextgames.app.data.chatThemes
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -17,6 +20,11 @@ import kotlin.collections.get
  */
 class ChatViewModel(private val database: FirebaseDatabase) {
     private val chatRef = database.getReference("messages")
+    private val userRef = database.getReference("users")
+
+    // Holds the current user's selected theme name
+    var currentThemeName: String = chatThemes.first().name
+        private set
 
     /**
      * Converts a timestamp in milliseconds to ISO 8601 UTC string.
@@ -136,5 +144,40 @@ class ChatViewModel(private val database: FirebaseDatabase) {
             }.sortedBy { it.timeStamp }
             onMessages(messages)
         }
+    }
+
+    /**
+     * Saves the selected chat theme for the current user in Firebase.
+     */
+    fun saveUserTheme(themeName: String, onComplete: (() -> Unit)? = null) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        userRef.child(userId).child("chatTheme").setValue(themeName)
+            .addOnCompleteListener { onComplete?.invoke() }
+        currentThemeName = themeName
+    }
+
+    /**
+     * Loads the user's selected chat theme from Firebase and sets it.
+     * Calls onTheme with the ChatTheme object (defaults to Light if not found).
+     */
+    fun loadUserTheme(onTheme: (ChatTheme) -> Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        userRef.child(userId).child("chatTheme").get().addOnSuccessListener { snapshot ->
+            val themeName = snapshot.value as? String ?: chatThemes.first().name
+            currentThemeName = themeName
+            val theme = chatThemes.find { it.name == themeName } ?: chatThemes.first()
+            onTheme(theme)
+        }.addOnFailureListener {
+            // Fallback to default theme
+            currentThemeName = chatThemes.first().name
+            onTheme(chatThemes.first())
+        }
+    }
+
+    /**
+     * Returns the current ChatTheme object.
+     */
+    fun getCurrentTheme(): ChatTheme {
+        return chatThemes.find { it.name == currentThemeName } ?: chatThemes.first()
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,10 +28,13 @@ import com.google.firebase.database.ChildEventListener
 import dk.nextgames.app.data.Message
 import dk.nextgames.app.viewModel.ChatViewModel
 import dk.nextgames.app.ui.common.ContainerCard
+import dk.nextgames.app.data.ChatTheme
+import dk.nextgames.app.data.chatThemes
 
 /**
  * ChatPopup is a composable for displaying and sending chat messages.
  * Handles message input, sending, live updating, and scroll-to-bottom.
+ * Applies user's selected chat theme.
  */
 @Composable
 fun ChatPopup(
@@ -68,14 +72,21 @@ fun ChatPopup(
         return
     }
 
-    // State
+    // State for chat messages and input
     val messages = remember { mutableStateListOf<Message>() }
     var input by remember { mutableStateOf("") }
     var listener by remember { mutableStateOf<ChildEventListener?>(null) }
     val scrollState = rememberScrollState()
 
-    // Init: hent historik og lyt på nye beskeder
+    // State for theme dialog and current theme
+    var showThemeDialog by remember { mutableStateOf(false) }
+    var chatTheme by remember { mutableStateOf(chatThemes.first()) }
+
+    // Load user's theme when chat opens
     LaunchedEffect(Unit) {
+        safeChatRepo.loadUserTheme { theme ->
+            chatTheme = theme
+        }
         try {
             safeChatRepo.cleanOldMessages()
             safeChatRepo.fetchAllMessages(safeGameId) { fetchedMessages ->
@@ -90,7 +101,7 @@ fun ChatPopup(
         }
     }
 
-    // Cleanup: fjern lytter
+    // Cleanup: remove listener
     DisposableEffect(Unit) {
         onDispose {
             listener?.let {
@@ -103,125 +114,176 @@ fun ChatPopup(
         }
     }
 
-    // Popup overlay + DIN kasse som container for hele chatvinduet
+    // Popup overlay for chat
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent),
+            .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        ContainerCard(
+        // Main chat container
+        Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .fillMaxHeight(0.8f)
+                .background(chatTheme.backgroundColor)
+                .padding(18.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(18.dp)
+            // Header with title, settings, and close button
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Header
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Game Chat", style = MaterialTheme.typography.titleLarge)
+                Text("Game Chat", style = MaterialTheme.typography.titleLarge, color = chatTheme.textColor)
+                Row {
+                    IconButton(onClick = { showThemeDialog = true }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = chatTheme.textColor)
+                    }
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close Chat")
+                        Icon(Icons.Filled.Close, contentDescription = "Close Chat", tint = chatTheme.textColor)
                     }
                 }
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            }
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-                // Beskedliste
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                ) {
-                    Column(Modifier.verticalScroll(scrollState)) {
-                        messages.forEach { msg ->
-                            val isOwn = msg.userName == safeUserName
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
+            // Message list
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                Column(Modifier.verticalScroll(scrollState)) {
+                    messages.forEach { msg ->
+                        val isOwn = msg.userName == safeUserName
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
+                        ) {
+                            Surface(
+                                color = if (isOwn) chatTheme.bubbleColorOwn else chatTheme.bubbleColorOther,
+                                shape = MaterialTheme.shapes.medium,
+                                shadowElevation = 2.dp,
+                                modifier = Modifier
+                                    .padding(vertical = 2.dp, horizontal = 4.dp)
+                                    .widthIn(max = 260.dp)
                             ) {
-                                Surface(
-                                    color = if (isOwn) Color(0xFF1976D2) else Color(0xFFE3E3E3),
-                                    shape = MaterialTheme.shapes.medium,
-                                    shadowElevation = 2.dp,
-                                    modifier = Modifier
-                                        .padding(vertical = 2.dp, horizontal = 4.dp)
-                                        .widthIn(max = 260.dp)
-                                ) {
-                                    Column(Modifier.padding(10.dp)) {
-                                        Text(
-                                            msg.userName,
-                                            color = if (isOwn) Color.White.copy(alpha = 0.9f) else Color.DarkGray,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            modifier = Modifier.padding(bottom = 2.dp)
-                                        )
-                                        Text(
-                                            msg.text,
-                                            color = if (isOwn) Color.White else Color.Black,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
+                                Column(Modifier.padding(10.dp)) {
+                                    Text(
+                                        msg.userName,
+                                        color = if (isOwn) chatTheme.bubbleTextColorOwn else chatTheme.bubbleTextColorOther,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        modifier = Modifier.padding(bottom = 2.dp)
+                                    )
+                                    Text(
+                                        msg.text,
+                                        color = if (isOwn) chatTheme.bubbleTextColorOwn else chatTheme.bubbleTextColorOther,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                 }
                             }
                         }
                     }
                 }
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            }
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-                // Input række
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = input,
-                        onValueChange = { input = it },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp),
-                        placeholder = { Text("Write a message...") },
-                        shape = MaterialTheme.shapes.medium,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                            cursorColor = MaterialTheme.colorScheme.primary
-                        ),
-                        textStyle = MaterialTheme.typography.bodyMedium
-                    )
-                    IconButton(
-                        onClick = {
-                            if (input.isNotBlank()) {
-                                try {
-                                    val msg = Message(
-                                        text = input,
-                                        userName = safeUserName,
-                                        timeStamp = System.currentTimeMillis(),
-                                        gameId = safeGameId
-                                    )
-                                    safeChatRepo.sendMessage(msg)
-                                    input = ""
-                                } catch (e: Exception) {
-                                    Log.e("ChatPopup", "Error sending message: ", e)
-                                }
+            // Input row
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    placeholder = { Text("Write a message...", color = chatTheme.textColor) },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = chatTheme.bubbleColorOwn,
+                        unfocusedBorderColor = chatTheme.textColor,
+                        cursorColor = chatTheme.bubbleColorOwn
+                    ),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = chatTheme.textColor)
+                )
+                IconButton(
+                    onClick = {
+                        if (input.isNotBlank()) {
+                            try {
+                                val msg = Message(
+                                    text = input,
+                                    userName = safeUserName,
+                                    timeStamp = System.currentTimeMillis(),
+                                    gameId = safeGameId
+                                )
+                                safeChatRepo.sendMessage(msg)
+                                input = ""
+                            } catch (e: Exception) {
+                                Log.e("ChatPopup", "Error sending message: ", e)
                             }
-                        },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                        }
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = chatTheme.bubbleColorOwn)
+                }
+            }
+        }
+
+        // Theme selection dialog
+        if (showThemeDialog) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color(0xAA000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    shadowElevation = 8.dp,
+                    color = Color.White,
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .wrapContentHeight()
+                ) {
+                    Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        // Add a clear title to the theme dialog
+                        Text("Theme Settings", style = MaterialTheme.typography.titleLarge, color = Color.Black)
+                        Spacer(Modifier.height(12.dp))
+                        Text("Choose Chat Theme", style = MaterialTheme.typography.titleMedium, color = Color.Black)
+                        Spacer(Modifier.height(12.dp))
+                        chatThemes.forEach { theme ->
+                            Button(
+                                onClick = {
+                                    chatTheme = theme
+                                    safeChatRepo.saveUserTheme(theme.name) {
+                                        showThemeDialog = false
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = theme.backgroundColor,
+                                    contentColor = theme.textColor
+                                )
+                            ) {
+                                Text(theme.name)
+                            }
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { showThemeDialog = false }) {
+                            Text("Close")
+                        }
                     }
                 }
             }
         }
     }
 
-    // Auto-scroll til bund ved nye beskeder
+    // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             scrollState.animateScrollTo(scrollState.maxValue)
