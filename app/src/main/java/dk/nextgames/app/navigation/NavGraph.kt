@@ -13,16 +13,18 @@ import dk.nextgames.app.ui.login.LoginScreen
 import dk.nextgames.app.ui.navigation.NAVIGATIONPAGE
 import dk.nextgames.app.ui.settings.SettingsPage
 import dk.nextgames.app.ui.userpage.UserPage
+import dk.nextgames.app.ui.login.ForgotPasswordScreen
 
 object Routes {
-    const val LOGIN          = "login"
-    const val HUB            = "NavigationPage"
-    const val USER           = "user"
-    const val SETTINGS       = "settings"
-    const val GAMES          = "games"
+    const val LOGIN           = "login"
+    const val HUB             = "NavigationPage"
+    const val USER            = "user"
+    const val SETTINGS        = "settings"
+    const val GAMES           = "games"
+    const val GAME            = "game"        // ?url=&id=&title=
+    const val LEADERBOARD     = "leaderboard"
 
-    const val GAME           = "game"        // ?url=&id=&title=
-    const val LEADERBOARD    = "leaderboard"
+    const val FORGOT_PASSWORD = "forgot_password"   // ✅ add this
 }
 
 @Composable
@@ -34,11 +36,23 @@ fun NextGamesNav() {
 
         /* ---------- Login ---------- */
         composable(Routes.LOGIN) {
-            LoginScreen {
-                nav.navigate(Routes.HUB) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
+            LoginScreen(
+                onLoggedIn = {
+                    nav.navigate(Routes.HUB) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onForgotPassword = {
+                    nav.navigate(Routes.FORGOT_PASSWORD)
                 }
-            }
+            )
+        }
+
+        /* ---------- Forgot Password ---------- */
+        composable(Routes.FORGOT_PASSWORD) {
+            ForgotPasswordScreen(
+                onBack = { nav.popBackStack() }
+            )
         }
 
         /* ---------- Hub ---------- */
@@ -64,7 +78,7 @@ fun NextGamesNav() {
         composable(Routes.GAMES) {
             GamesPage(
                 onBack = { nav.popBackStack() },
-                onGameClicked = { game: Game ->                     // ① matcher GamesPage
+                onGameClicked = { game: Game ->
                     val encUrl   = Uri.encode(game.netlifyUrl)
                     val encTitle = Uri.encode(game.title)
 
