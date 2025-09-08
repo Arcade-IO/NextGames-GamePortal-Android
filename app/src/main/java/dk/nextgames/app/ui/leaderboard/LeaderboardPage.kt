@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -27,12 +26,12 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -56,6 +56,20 @@ import dk.nextgames.app.data.GameStub
 import dk.nextgames.app.data.HighscoreEntry
 import dk.nextgames.app.ui.ViewModel.LeaderboardViewModel
 import dk.nextgames.app.ui.pages.PageScaffold
+
+/* ====== TABEL-MÅL (bruges i både header og rækker) ====== */
+private val TABLE_HPAD: Dp = 6.dp            // indre venstre/højre padding
+private val COL_POS: Dp = 56.dp              // bredere POS: plads til tal + pokal
+private val COL_SCORE: Dp = 80.dp            // fast bredde til score
+private val GAP_SCORE_TO_NAME: Dp = 8.dp     // ens afstand mellem SCORE og NAME
+
+/* ====== Label-indryk for at flugte med TextField-indhold ====== */
+private val FIELD_LABEL_INDENT: Dp = 16.dp   // ca. samme som M3 TextField indholdspadding
+
+/* ====== Pokalfarver ====== */
+private val GOLD   = Color(0xFFFFD700)      // #FFD700
+private val SILVER = Color(0xFFC0C0C0)      // #C0C0C0
+private val BRONZE = Color(0xFFCD7F32)      // #CD7F32
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,10 +127,12 @@ fun LeaderboardPage(
                     Modifier.fillMaxWidth().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // ► Indryk label så den flugter med TextField’ets indre start
                     Text(
-                        text = "Games",
+                        text = "Selected Game",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = onBg
+                        color = onBg,
+                        modifier = Modifier.padding(start = FIELD_LABEL_INDENT)
                     )
 
                     // Felt = kassefarve, MENU = container (opak)
@@ -176,14 +192,15 @@ fun LeaderboardPage(
 private fun TableHeader(onBg: Color) {
     Column(Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 6.dp),
+            Modifier.fillMaxWidth().padding(horizontal = TABLE_HPAD),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            HeaderCell("POS",   onBg, Modifier.width(44.dp))
-            HeaderCell("SCORE", onBg, Modifier.width(80.dp))
-            HeaderCell("NAME",  onBg, Modifier.weight(1f))
-            HeaderCell("GAME",  onBg, Modifier.weight(1f))
+            Box(Modifier.width(COL_POS)) { HeaderCell("POS", onBg) }
+            Box(Modifier.width(COL_SCORE)) { HeaderCell("SCORE", onBg) }
+            Spacer(Modifier.width(GAP_SCORE_TO_NAME))
+            Box(Modifier.weight(1f)) { HeaderCell("NAME", onBg) }
+            Box(Modifier.weight(1f)) { HeaderCell("GAME", onBg) }
         }
         HorizontalDivider(
             modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
@@ -202,53 +219,83 @@ private fun LeaderboardRow(
     rowShape: RoundedCornerShape
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().clip(rowShape).background(rowBg)
-            .padding(horizontal = 6.dp, vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(rowShape)
+            .background(rowBg)
+            .padding(horizontal = TABLE_HPAD, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.width(44.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                "${index + 1}",
-                color = textColor,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                textAlign = TextAlign.Start,
-                modifier = Modifier.weight(1f)
-            )
-            if (index in 0..2) {
-                androidx.compose.material3.Icon(
-                    imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = null,
-                    tint = textColor.copy(alpha = when (index) { 0 -> 1f; 1 -> 0.8f; else -> 0.6f }),
-                    modifier = Modifier.width(16.dp)
+        // POS-kolonne (fast bredde) — tal + pokal står SAMMEN, venstrestillet
+        Box(Modifier.width(COL_POS)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    "${index + 1}",
+                    color = textColor,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    textAlign = TextAlign.Start
                 )
+                if (index in 0..2) {
+                    val trophyTint = when (index) {
+                        0 -> GOLD
+                        1 -> SILVER
+                        else -> BRONZE
+                    }
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = null,
+                        tint = trophyTint,
+                        modifier = Modifier.width(16.dp)
+                    )
+                }
             }
         }
 
-        Text(
-            text = "${e.score}",
-            color = textColor,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.SemiBold
-            ),
-            textAlign = TextAlign.End,
-            modifier = Modifier.width(80.dp)
-        )
+        // SCORE-kolonne (fast bredde, venstrejusteret som headeren)
+        Box(
+            Modifier.width(COL_SCORE),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = "${e.score}",
+                color = textColor,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold
+                ),
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
-        Text(e.displayName, color = textColor, style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f), maxLines = 1)
+        Spacer(Modifier.width(GAP_SCORE_TO_NAME))
 
-        Text(e.gameTitle, color = textColor.copy(alpha = 0.90f),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f), maxLines = 1)
+        // NAME-kolonne
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            Text(
+                e.displayName,
+                color = textColor,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1
+            )
+        }
+
+        // GAME-kolonne
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            Text(
+                e.gameTitle,
+                color = textColor.copy(alpha = 0.90f),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1
+            )
+        }
     }
 }
 
-/* ---------- Dropdown (Exposed + containerfarve, ingen hvide kanter) ---------- */
+/* ---------- Dropdown (samme tema, forankret korrekt) ---------- */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -290,9 +337,8 @@ fun GameDropdown(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(shape)
-                    // ekstra sikker: hele feltet åbner/lukker menuen
                     .clickable { expanded = !expanded }
-                    .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true),
+                    .menuAnchor(), // anker til menuen
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = fieldBgColor,
                     unfocusedContainerColor = fieldBgColor,
@@ -318,20 +364,16 @@ fun GameDropdown(
                 shape = shape,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
-                // ► Farv selve popup-roden → ingen hvide kanter
                 modifier = Modifier.background(menuBgColor, shape)
             ) {
                 games.forEach { g ->
                     DropdownMenuItem(
-                        text = { Text(g.name) },
+                        text = { Text(g.name, color = menuOnColor) },
                         onClick = {
                             expanded = false
                             onSelect(g.id)
                         },
-                        // Gennemsigtige items så baggrunden ses
-                        colors = MenuDefaults.itemColors(
-                            textColor = menuOnColor
-                        )
+                        colors = MenuDefaults.itemColors(textColor = menuOnColor)
                     )
                 }
             }
@@ -342,12 +384,11 @@ fun GameDropdown(
 /* ---------- Helpers ---------- */
 
 @Composable
-private fun HeaderCell(text: String, color: Color, modifier: Modifier = Modifier) {
+private fun HeaderCell(text: String, color: Color) {
     Text(
         text = text,
         color = color.copy(alpha = 0.85f),
         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-        modifier = modifier,
         textAlign = TextAlign.Start
     )
 }
