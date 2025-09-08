@@ -30,6 +30,7 @@ import dk.nextgames.app.viewModel.ChatViewModel
 import dk.nextgames.app.ui.common.ContainerCard
 import dk.nextgames.app.data.ChatTheme
 import dk.nextgames.app.data.chatThemes
+import androidx.compose.foundation.layout.imePadding
 
 /**
  * ChatPopup is a composable for displaying and sending chat messages.
@@ -117,176 +118,193 @@ fun ChatPopup(
     // Popup overlay for chat
     Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .imePadding(), // juster for tastatur
         contentAlignment = Alignment.Center
     ) {
-        // Main chat container
-        Column(
+        // Main chat container with ContainerCard
+        ContainerCard(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .fillMaxHeight(0.8f)
-                .background(chatTheme.backgroundColor)
-                .padding(18.dp)
+                .fillMaxHeight(0.85f)
         ) {
-            // Header with title, settings, and close button
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(chatTheme.backgroundColor) // keep background theme inside
+                    .padding(18.dp)
             ) {
-                Text("Game Chat", style = MaterialTheme.typography.titleLarge, color = chatTheme.textColor)
-                Row {
-                    IconButton(onClick = { showThemeDialog = true }) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = chatTheme.textColor)
-                    }
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close Chat", tint = chatTheme.textColor)
+                // Header with title, settings, and close button
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Game Chat",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = chatTheme.textColor
+                    )
+                    Row {
+                        IconButton(onClick = { showThemeDialog = true }) {
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = "Settings",
+                                tint = chatTheme.textColor
+                            )
+                        }
+                        IconButton(onClick = onClose) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = "Close Chat",
+                                tint = chatTheme.textColor
+                            )
+                        }
                     }
                 }
-            }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-            // Message list
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            ) {
-                Column(Modifier.verticalScroll(scrollState)) {
-                    messages.forEach { msg ->
-                        val isOwn = msg.userName == safeUserName
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
-                        ) {
-                            Surface(
-                                color = if (isOwn) chatTheme.bubbleColorOwn else chatTheme.bubbleColorOther,
-                                shape = MaterialTheme.shapes.medium,
-                                shadowElevation = 2.dp,
-                                modifier = Modifier
-                                    .padding(vertical = 2.dp, horizontal = 4.dp)
-                                    .widthIn(max = 260.dp)
+                // Message list
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    Column(Modifier.verticalScroll(scrollState)) {
+                        messages.forEach { msg ->
+                            val isOwn = msg.userName == safeUserName
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
                             ) {
-                                Column(Modifier.padding(10.dp)) {
-                                    Text(
-                                        msg.userName,
-                                        color = if (isOwn) chatTheme.bubbleTextColorOwn else chatTheme.bubbleTextColorOther,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        modifier = Modifier.padding(bottom = 2.dp)
-                                    )
-                                    Text(
-                                        msg.text,
-                                        color = if (isOwn) chatTheme.bubbleTextColorOwn else chatTheme.bubbleTextColorOther,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                Surface(
+                                    color = if (isOwn) chatTheme.bubbleColorOwn else chatTheme.bubbleColorOther,
+                                    shape = MaterialTheme.shapes.medium,
+                                    shadowElevation = 2.dp,
+                                    modifier = Modifier
+                                        .padding(vertical = 2.dp, horizontal = 4.dp)
+                                        .widthIn(max = 260.dp)
+                                ) {
+                                    Column(Modifier.padding(10.dp)) {
+                                        Text(
+                                            msg.userName,
+                                            color = if (isOwn) chatTheme.bubbleTextColorOwn else chatTheme.bubbleTextColorOther,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            modifier = Modifier.padding(bottom = 2.dp)
+                                        )
+                                        Text(
+                                            msg.text,
+                                            color = if (isOwn) chatTheme.bubbleTextColorOwn else chatTheme.bubbleTextColorOther,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-            // Input row
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp),
-                    placeholder = { Text("Write a message...", color = chatTheme.textColor) },
-                    shape = MaterialTheme.shapes.medium,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = chatTheme.bubbleColorOwn,
-                        unfocusedBorderColor = chatTheme.textColor,
-                        cursorColor = chatTheme.bubbleColorOwn
-                    ),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = chatTheme.textColor)
-                )
-                IconButton(
-                    onClick = {
-                        if (input.isNotBlank()) {
-                            try {
-                                val msg = Message(
-                                    text = input,
-                                    userName = safeUserName,
-                                    timeStamp = System.currentTimeMillis(),
-                                    gameId = safeGameId
-                                )
-                                safeChatRepo.sendMessage(msg)
-                                input = ""
-                            } catch (e: Exception) {
-                                Log.e("ChatPopup", "Error sending message: ", e)
+                // Input row
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = input,
+                        onValueChange = { input = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        placeholder = { Text("Write a message...", color = chatTheme.textColor) },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = chatTheme.bubbleColorOwn,
+                            unfocusedBorderColor = chatTheme.textColor,
+                            cursorColor = chatTheme.bubbleColorOwn
+                        ),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = chatTheme.textColor)
+                    )
+                    IconButton(
+                        onClick = {
+                            if (input.isNotBlank()) {
+                                try {
+                                    val msg = Message(
+                                        text = input,
+                                        userName = safeUserName,
+                                        timeStamp = System.currentTimeMillis(),
+                                        gameId = safeGameId
+                                    )
+                                    safeChatRepo.sendMessage(msg)
+                                    input = ""
+                                } catch (e: Exception) {
+                                    Log.e("ChatPopup", "Error sending message: ", e)
+                                }
+                            }
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Send",
+                            tint = chatTheme.bubbleColorOwn
+                        )
+                    }
+                }
+            }
+
+            // Theme selection dialog
+            if (showThemeDialog) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showThemeDialog = false },
+                    containerColor = Color(0xFF1F1F1F),
+                    title = {
+                        Text("Theme Settings", style = MaterialTheme.typography.titleLarge,
+                            color = Color.White
+                        )
+
+                    },
+                    text = {
+                        Column {
+                            Text("Choose Chat Theme", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(12.dp))
+                            chatThemes.forEach { theme ->
+                                Button(
+                                    onClick = {
+                                        chatTheme = theme
+                                        safeChatRepo.saveUserTheme(theme.name) {
+                                            showThemeDialog = false
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        containerColor = theme.backgroundColor,
+                                        contentColor = theme.textColor
+                                    )
+                                ) {
+                                    Text(theme.name)
+                                }
                             }
                         }
                     },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = chatTheme.bubbleColorOwn)
-                }
-            }
-        }
-
-        // Theme selection dialog
-        if (showThemeDialog) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color(0xAA000000)),
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    shadowElevation = 8.dp,
-                    color = Color.White,
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .wrapContentHeight()
-                ) {
-                    Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Add a clear title to the theme dialog
-                        Text("Theme Settings", style = MaterialTheme.typography.titleLarge, color = Color.Black)
-                        Spacer(Modifier.height(12.dp))
-                        Text("Choose Chat Theme", style = MaterialTheme.typography.titleMedium, color = Color.Black)
-                        Spacer(Modifier.height(12.dp))
-                        chatThemes.forEach { theme ->
-                            Button(
-                                onClick = {
-                                    chatTheme = theme
-                                    safeChatRepo.saveUserTheme(theme.name) {
-                                        showThemeDialog = false
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                    containerColor = theme.backgroundColor,
-                                    contentColor = theme.textColor
-                                )
-                            ) {
-                                Text(theme.name)
-                            }
-                        }
-                        Spacer(Modifier.height(16.dp))
+                    confirmButton = {
                         Button(onClick = { showThemeDialog = false }) {
                             Text("Close")
                         }
                     }
-                }
+                )
             }
-        }
-    }
 
-    // Auto-scroll to bottom when new messages arrive
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+
+        // Auto-scroll to bottom when new messages arrive
+        LaunchedEffect(messages.size) {
+            if (messages.isNotEmpty()) {
+                scrollState.animateScrollTo(scrollState.maxValue)
+            }
         }
     }
 }
